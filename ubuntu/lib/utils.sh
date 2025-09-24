@@ -3,7 +3,7 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-$APP_NAME="nas-utility"
+APP_NAME="nas-utility"
 
 
 

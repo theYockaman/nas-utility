@@ -6,7 +6,7 @@ IFS=$'\n\t'
 # ----------------------
 # Helper Functions
 # ----------------------
-$APP_NAME="nas-utility"
+APP_NAME="nas-utility"
 source "/usr/local/lib/$APP_NAME/utils.sh"
 
 
@@ -51,7 +51,7 @@ main() {
     if [ $# -ge 1 ]; then
         case $1 in
             "install")
-                install_menu $2 
+                install_menu $2 $3 $4 $5 $6 &
                 ;;
 
 
