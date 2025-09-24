@@ -18,6 +18,7 @@ main_menu() {
     while true; do
         CHOICE=$(whiptail --title "Select an Action" --menu "Choose an option:" 20 60 10 \
             "Install Menu" "" \
+            "Delete" "" \
             "Exit" "" \
             3>&1 1>&2 2>&3)
 

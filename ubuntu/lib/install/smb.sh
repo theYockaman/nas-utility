@@ -1,14 +1,14 @@
 #!/bin/bash
 
 # Get parameters or prompt for shared directory and share name
-if [ -n "$1" ]; then
+if [ -n $# -ge 1 ]; then
     SHARE_DIR="$1"
 else
     SHARE_DIR=$(whiptail --inputbox "Enter the directory to share (default: /mnt/server): "  10 60 3>&1 1>&2 2>&3)
     SHARE_DIR=${SHARE_DIR:-/mnt/server}
 fi
 
-if [ -n "$2" ]; then
+if [ $# -ge 2 ]; then
     SHARE_NAME="$2"
 else
     SHARE_NAME=$(whiptail --inputbox "Enter the share name (default: Shared): "   10 60 3>&1 1>&2 2>&3)
@@ -16,7 +16,7 @@ else
 fi
 
 # Get users from $3 or prompt
-if [ -n "$3" ]; then
+if [ $# -ge 3 ]; then
     USER_INPUT="$3"
 else
     USER_INPUT=$(whiptail --inputbox "Enter usernames to create and allow (comma separated): "   10 60 3>&1 1>&2 2>&3)
@@ -24,7 +24,7 @@ fi
 IFS=',' read -ra USERS <<< "$USER_INPUT"
 
 # Get passwords from $4 (comma separated) or prompt
-if [ -n "$4" ]; then
+if [ $# -ge 4 ]; then
     IFS=',' read -ra PASSWORDS <<< "$4"
     declare -A USER_PASSWORDS
     for i in "${!USERS[@]}"; do

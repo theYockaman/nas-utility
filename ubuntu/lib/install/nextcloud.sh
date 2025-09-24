@@ -2,7 +2,7 @@
 set -e
 
 # Get server directory from $1 or prompt
-if [ -n "$1" ]; then
+if [ $# -ge 1 ]; then
     DATA_DIR="$1"
 else
     DATA_DIR=$(whiptail --inputbox "Enter the directory to use for Filebrowser root (default: /mnt/server/): "  10 60 3>&1 1>&2 2>&3)
@@ -10,7 +10,7 @@ else
 fi
 
 # Get backup directory from $2 or prompt
-if [ -n "$2" ]; then
+if [ $# -ge 2 ]; then
     BACKUP_DIR="$2"
 else
     BACKUP_DIR=$(whiptail --inputbox "Enter the backup directory for Nextcloud (default: /mnt/server/backups/): "  10 60 3>&1 1>&2 2>&3)

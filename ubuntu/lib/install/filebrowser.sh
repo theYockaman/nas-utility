@@ -1,7 +1,7 @@
 
 # Setup Filebrowser: -- https://aimerneige.com/en/post/linux/install-filebrowser-on-ubuntu-server/
 
-if [ -n "$1" ]; then
+if [ $# -ge 1 ]; then
     PORT="$1"
 else
     PORT=$(whiptail --inputbox "Enter the port for File Browser (default: 8080): "  10 60 3>&1 1>&2 2>&3)
@@ -10,7 +10,7 @@ fi
 
 
 # Get server directory from $1 or prompt
-if [ -n "$2" ]; then
+if [ $# -ge 2 ]; then
     SERVER_DIR="$2"
 else
     SERVER_DIR=$(whiptail --inputbox "Enter the directory to use for Filebrowser root (default: /mnt/server/): "  10 60 3>&1 1>&2 2>&3)
@@ -18,7 +18,7 @@ else
 fi
 
 # Get backup directory from $2 or prompt
-if [ -n "$3" ]; then
+if [ $# -ge 3 ]; then
     BACKUP_DIR="$3"
 else
     BACKUP_DIR=$(whiptail --inputbox "Enter the backup directory for Filebrowser (default: /mnt/server/backups/): "  10 60 3>&1 1>&2 2>&3)
