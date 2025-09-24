@@ -6,7 +6,7 @@ IFS=$'\n\t'
 # ----------------------
 # Helper Functions
 # ----------------------
-$APP_NAME="git-utility"
+$APP_NAME="nas-utility"
 source "/usr/local/lib/$APP_NAME/utils.sh"
 
 
@@ -15,12 +15,9 @@ source "/usr/local/lib/$APP_NAME/utils.sh"
 # ----------------------
 main_menu() {
 
-    
-    OPTIONS=("Delete" "Exit")
-
     while true; do
         CHOICE=$(whiptail --title "Select an Action" --menu "Choose an option:" 20 60 10 \
-            "Delete" "" \
+            "Install Menu" "" \
             "Exit" "" \
             3>&1 1>&2 2>&3)
 
@@ -31,6 +28,8 @@ main_menu() {
         fi
 
         case "$CHOICE" in
+            "Install Menu") install_menu ;;
+            "Uninstall Menu") uninstall_menu ;;
             "Delete") delete_app ;;
             "Exit") exit_program ;;
             *) whiptail --title "Error" --msgbox "Invalid option selected!" 10 50 ;;
@@ -41,21 +40,6 @@ main_menu() {
 
 
 
-run_command() {
-    case $1 in
-        "delete")
-            delete_app &
-            ;;
-        "quit")
-            exit 0
-            ;;
-        *)
-            echo "Unknown command: $1"
-            exit 1
-            ;;
-    esac
-}
-
 
 
 
@@ -65,7 +49,23 @@ run_command() {
 main() {
 
     if [ $# -ge 1 ]; then
-        run_command "$1"
+        case $1 in
+            "install")
+                install_menu $2 
+                ;;
+
+
+            "delete")
+                delete_app &
+                ;;
+            "quit")
+                exit 0
+                ;;
+            *)
+                echo "Unknown command: $1"
+                exit 1
+                ;;
+        esac
     else
         # Check if Whiptail is installed
         if ! command -v whiptail &> /dev/null; then

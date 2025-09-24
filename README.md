@@ -1,5 +1,4 @@
-# bash-app-template
-
+# nas-utility
 A template repository for Bash CLI apps.
 
 ## Features
@@ -10,7 +9,7 @@ A template repository for Bash CLI apps.
 
 ### Ubuntu/Debian
 ```
-sudo curl -s https://raw.githubusercontent.com/theYockaman/bash-app-template/main/ubuntu/install.sh | sudo bash
+sudo curl -s https://raw.githubusercontent.com/theYockaman/nas-utility/main/ubuntu/install.sh | sudo bash
 ```
 
 ## Functions to be Added
