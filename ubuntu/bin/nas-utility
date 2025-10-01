@@ -10,73 +10,109 @@ APP_NAME="nas-utility"
 source "/usr/local/lib/$APP_NAME/utils.sh"
 
 
-# ----------------------
-# Main Menu Function
-# ----------------------
-main_menu() {
 
-    while true; do
-        CHOICE=$(whiptail --title "Select an Action" --menu "Choose an option:" 20 60 10 \
-            "Install Menu" "" \
-            "Delete" "" \
-            "Exit" "" \
-            3>&1 1>&2 2>&3)
-
-        exitstatus=$?
-        if [ $exitstatus -ne 0 ] || [ -z "$CHOICE" ]; then
-            echo "No selection made. Exiting."
-            break
-        fi
-
-        case "$CHOICE" in
-            "Install Menu") install_menu ;;
-            "Uninstall Menu") uninstall_menu ;;
-            "Delete") delete_app ;;
-            "Exit") exit_program ;;
-            *) whiptail --title "Error" --msgbox "Invalid option selected!" 10 50 ;;
+# --- Global argument parser ---
+parse_global_args() {
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --whiptail)
+                WHIPTAIL=true
+                shift
+                ;;
+            -*)
+                echo "Unknown global option: $1" >&2
+                exit 1
+                ;;
+            *)
+                COMMAND="$1"
+                shift
+                ARGS=("$@")
+                break
+                ;;
         esac
     done
 }
 
 
+#!/bin/bash
+
+WHIPTAIL=false
+COMMAND=""
+ARGS=()
 
 
 
 
+install(){
+    
 
-# ----------------------
-# Entry Point
-# ----------------------
+
+}
+
+
+
+
 main() {
 
-    if [ $# -ge 1 ]; then
-        case $1 in
-            "install")
-                install_menu $2 $3 $4 $5 $6 &
-                ;;
+    parse_global_args "$@"
 
+    # Define mapping between actions and functions
+    declare -A ACTIONS=(
+        ["install"]="install_menu"
+        ["uninstall"]="uninstall_menu"
+        ["delete"]="delete_app"
+        ["exit"]="exit_program"
+    )
 
-            "delete")
-                delete_app &
-                ;;
-            "quit")
-                exit 0
-                ;;
-            *)
-                echo "Unknown command: $1"
-                exit 1
-                ;;
-        esac
-    else
+    if $WHIPTAIL; then
+        
         # Check if Whiptail is installed
         if ! command -v whiptail &> /dev/null; then
             sudo apt update
             sudo apt install whiptail -y
         fi
 
-        main_menu
 
+        while true; do
+            CHOICE=$(whiptail --title "Action Menu" --menu "Choose an option:" 20 60 10 \
+                "install" "Install application" \
+                "uninstall" "Uninstall application" \
+                "delete" "Delete application" \
+                "exit" "Exit program" \
+                3>&1 1>&2 2>&3)
+
+            exitstatus=$?
+            if [ $exitstatus -ne 0 ] || [ -z "$CHOICE" ]; then
+                echo "No selection made. Exiting."
+                break
+            fi
+
+            if [[ -n "${ACTIONS[$CHOICE]}" ]]; then
+                "${ACTIONS[$CHOICE]}" "${ARGS[@]}"
+            else
+                whiptail --title "Error" --msgbox "Invalid option selected!" 10 50
+            fi
+        done
+    else
+        if [[ -n "${ACTIONS[$COMMAND]}" ]]; then
+            "${ACTIONS[$COMMAND]}" "${ARGS[@]}"
+        else
+            echo "Usage: $0 <command> [options]"
+            echo
+            echo "Commands:"
+            for cmd in "${!ACTIONS[@]}"; do
+                printf "  %-10s\n" "$cmd"
+            done
+            echo
+            echo "Options:"
+            echo "  --whiptail   Enable interactive prompts"
+            exit 1
+        fi
     fi
 }
 
 main "$@"
+
+
+
+
