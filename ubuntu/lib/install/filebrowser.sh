@@ -2,6 +2,16 @@
 # Setup Filebrowser: -- https://aimerneige.com/en/post/linux/install-filebrowser-on-ubuntu-server/
 
 if [ $# -ge 1 ]; then
+    if [[ $1 == "--help" ]]; then
+        echo "Usage: $0 filebrowser [options]"
+        echo "Installs FileBrowser with optional parameters:"
+        echo "  arg1   = filebrowser port"
+        echo "  arg2   = server directory"
+        echo "  arg3   = backup directory"
+        return 0
+    fi
+
+
     PORT="$1"
 else
     PORT=$(whiptail --inputbox "Enter the port for File Browser (default: 8080): "  10 60 3>&1 1>&2 2>&3)

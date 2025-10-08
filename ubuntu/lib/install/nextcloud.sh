@@ -3,6 +3,14 @@ set -e
 
 # Get server directory from $1 or prompt
 if [ $# -ge 1 ]; then
+    if [[ $1 == "--help" ]]; then
+        echo "Usage: $0 nextcloud [options]"
+        echo "Installs Nextcloud with optional parameters:"
+        echo "  arg1   = data directory"
+        echo "  arg2   = backup directory"
+        return 0
+    fi
+
     DATA_DIR="$1"
 else
     DATA_DIR=$(whiptail --inputbox "Enter the directory to use for Filebrowser root (default: /mnt/server/): "  10 60 3>&1 1>&2 2>&3)

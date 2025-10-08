@@ -9,22 +9,24 @@ APP_NAME="nas-utility"
 
 install_menu() {
     if [ $# -ge 1 ]; then
+        cmd=$1
+        shift
 
-        case $1 in
+        case $cmd in
             "nextcloud")
-                install_nextcloud $2 $3 &
+                install_nextcloud "$@" &
                 ;;
             "filebrowser")
-                install_filebrowser $2 $3 $4 &
+                install_filebrowser "$@" &
                 ;;
             "smb")
-                install_smb $2 $3 $4 $5 &
+                install_smb "$@" &
                 ;;
             "all")
                 install_all &
                 ;;
             *)
-                echo "Unknown command: $1"
+                echo "Unknown command: $cmd"
                 exit 1
                 ;;
         esac
@@ -33,8 +35,7 @@ install_menu() {
 
     else
 
-
-        CHOICE=$(whiptail --title "Select an Action" --menu "Choose an option:" 20 60 10 \
+        CHOICE=$(whiptail --title "Install Menu" --menu "Choose an option:" 20 60 10 \
             "Install Nextcloud" "" \
             "Install FileBrowser" "" \
             "Install SMB" "" \
@@ -58,13 +59,33 @@ install_menu() {
     fi
 }
 
+install_all() {
+    install_nextcloud
+    install_filebrowser
+    install_smb
+}
+
+install_nextcloud() {
+    source /usr/local/lib/$APP_NAME/install/nextcloud.sh
+}
+
+install_filebrowser() {
+    source /usr/local/lib/$APP_NAME/install/filebrowser.sh
+}
+
+install_smb() {
+    source /usr/local/lib/$APP_NAME/install/smb.sh
+}
+
+
 
 
 uninstall_menu() {
-
     if [ $# -ge 1 ]; then
+        cmd=$1
+        shift
 
-        case $1 in
+        case $cmd in
             "nextcloud")
                 uninstall_nextcloud &
                 ;;
@@ -109,25 +130,6 @@ uninstall_menu() {
     fi
 }
 
-
-install_all() {
-    install_nextcloud
-    install_filebrowser
-    install_smb
-}
-
-install_nextcloud() {
-    source /usr/local/lib/$APP_NAME/install/nextcloud.sh
-}
-
-install_filebrowser() {
-    source /usr/local/lib/$APP_NAME/install/filebrowser.sh
-}
-
-install_smb() {
-    source /usr/local/lib/$APP_NAME/install/smb.sh
-}
-
 uninstall_all() {
     uninstall_nextcloud
     uninstall_filebrowser
@@ -147,6 +149,8 @@ uninstall_smb() {
 }
 
 
+
+
 exit_program() {
     echo "Exiting program."
     exit 0
@@ -155,6 +159,10 @@ exit_program() {
 delete_app() {
     source /usr/local/lib/$APP_NAME/delete_app.sh
 }
+
+
+
+
 
 
 log_info() {

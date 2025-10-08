@@ -2,6 +2,16 @@
 
 # Get parameters or prompt for shared directory and share name
 if [ -n $# -ge 1 ]; then
+    if [[ $1 == "--help" ]]; then
+        echo "Usage: $0 smb [options]"
+        echo "Installs SMB with optional parameters:"
+        echo "  arg1   = share directory"
+        echo "  arg2   = share name"
+        echo "  arg3   = users (comma separated)"
+        echo "  arg4   = users passwords (comma separated)"
+        return 0
+    fi
+
     SHARE_DIR="$1"
 else
     SHARE_DIR=$(whiptail --inputbox "Enter the directory to share (default: /mnt/server): "  10 60 3>&1 1>&2 2>&3)
