@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Get parameters or prompt for shared directory and share name
-if [ -n $# -ge 1 ]; then
+if [ $# -ge 1 ]; then
     if [[ $1 == "--help" ]]; then
         echo "Usage: $0 smb [options]"
         echo "Installs SMB with optional parameters:"
