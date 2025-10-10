@@ -66,6 +66,10 @@ show_help(){
     echo "  $0 delete"
 }
 
+reset_ubuntu() {
+    source /usr/local/lib/$APP_NAME/reset.sh
+}
+
 
 
 # Installation of services
