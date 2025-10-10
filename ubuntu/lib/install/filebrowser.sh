@@ -134,4 +134,6 @@ sudo systemctl start filebrowser
 echo "Allowing port $PORT through ufw..."
 sudo ufw allow $PORT/tcp
 
+echo "Filebrowser setup complete. (Username and Password Displayed Below)"
+sudo systemctl status filebrowser
 echo "Filebrowser installed and running on port $PORT"
