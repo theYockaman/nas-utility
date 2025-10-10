@@ -68,6 +68,9 @@ main() {
             -u|uninstall)
                 uninstall_menu "$@"
                 ;;
+            -r|reset)
+                reset_ubuntu "$@"
+                ;;
             -d|delete)
                 delete_app "$@"
                 ;;

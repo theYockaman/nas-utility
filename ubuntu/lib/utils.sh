@@ -68,6 +68,7 @@ show_help(){
 
 reset_ubuntu() {
     source /usr/local/lib/$APP_NAME/reset.sh
+    exit_app
 }
 
 
