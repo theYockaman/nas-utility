@@ -2,23 +2,19 @@
 set -e
 
 # --- Default Configuration ---
+APP_NAME="nas-utility"
 WHIPTAIL=false
 ARGS=()
 
 # --- Functions ---
 source "/usr/local/lib/$APP_NAME/utils.sh"
 
-
-
-
-
-
-
 # --- Main ---
 main() {
 
     #  Parse global arguments
     parse_global_args "$@"
+    set -- "${ARGS[@]}"
 
     # If no arguments provided, show help
     if [ ${#ARGS[@]} -eq 0 ]; then
@@ -27,18 +23,18 @@ main() {
     fi
 
     # --- Run Actions ---
-    CMD="${ARGS[0]}"
+    CMD=$1
     shift
 
     case $CMD in
         -i|install)
-            install_menu "${ARGS[@]}"
+            install_menu "$@"
             ;;
         -u|uninstall)
-            uninstall_menu "${ARGS[@]}"
+            uninstall_menu "$@"
             ;;
         -d|delete)
-            delete_app "${ARGS[@]}"
+            delete_app "$@"
             ;;
         -h|help)
             show_help
@@ -49,7 +45,8 @@ main() {
     esac
 }
 
-
+# Start the script
+main "$@"
 
 
 

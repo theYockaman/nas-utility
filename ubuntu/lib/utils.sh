@@ -3,7 +3,6 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-APP_NAME="nas-utility"
 
 # --- Global argument parser ---
 parse_global_args() {
@@ -35,7 +34,9 @@ exit_program() {
 }
 
 delete_app() {
-    source /usr/local/lib/$APP_NAME/delete_app.sh
+    sudo rm -rf /usr/local/lib/$APP_NAME
+    sudo rm -f /usr/local/bin/$APP_NAME
+    echo "$APP_NAME has been deleted."
 }
 
 log_info() {
