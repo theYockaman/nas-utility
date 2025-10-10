@@ -79,11 +79,11 @@ install_menu() {
         fi
 
         while true; do
-            CHOICE=$(whiptail --title "Action Menu" --menu "Choose an option:" 20 60 10 \
-                "Install Menu" "" \
-                "Uninstall Menu" "" \
-                "Delete" "" \
-                "Exit" "" \
+            CHOICE=$(whiptail --title "Select an Action" --menu "Choose an option:" 20 60 10 \
+                "Install Nextcloud" "" \
+                "Install FileBrowser" "" \
+                "Install SMB" "" \
+                "Install All" "" \
                 3>&1 1>&2 2>&3)
 
             exitstatus=$?
@@ -93,10 +93,10 @@ install_menu() {
             fi
 
             case "$CHOICE" in
-                "Install Menu") install_menu ;;
-                "Uninstall Menu") uninstall_menu ;;
-                "Delete") delete_app ;;
-                "Exit") exit_app ;;
+                "Install Nextcloud") install_nextcloud ;;
+                "Install FileBrowser") install_filebrowser ;;
+                "Install SMB") install_smb ;;
+                "Install All") install_all ;;
                 *) whiptail --title "Error" --msgbox "Invalid option selected!" 10 50 ;;
             esac
         done

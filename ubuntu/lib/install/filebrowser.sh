@@ -14,8 +14,12 @@ if [ $# -ge 1 ]; then
 
     PORT="$1"
 else
-    PORT=$(whiptail --inputbox "Enter the port for File Browser (default: 8080): "  10 60 3>&1 1>&2 2>&3)
+
+    if [[ $WHIPTAIL == true ]]; then
+        PORT=$(whiptail --inputbox "Enter the port for File Browser (default: 8080): "  10 60 3>&1 1>&2 2>&3)
+    fi
     PORT=${PORT:-8080}
+    
 fi
 
 
@@ -23,7 +27,10 @@ fi
 if [ $# -ge 2 ]; then
     SERVER_DIR="$2"
 else
-    SERVER_DIR=$(whiptail --inputbox "Enter the directory to use for Filebrowser root (default: /mnt/server/): "  10 60 3>&1 1>&2 2>&3)
+
+    if [[ $WHIPTAIL == true ]]; then
+        SERVER_DIR=$(whiptail --inputbox "Enter the directory to use for Filebrowser root (default: /mnt/server/): "  10 60 3>&1 1>&2 2>&3)
+    fi
     SERVER_DIR=${SERVER_DIR:-/mnt/server/}
 fi
 
@@ -31,7 +38,10 @@ fi
 if [ $# -ge 3 ]; then
     BACKUP_DIR="$3"
 else
-    BACKUP_DIR=$(whiptail --inputbox "Enter the backup directory for Filebrowser (default: /mnt/server/backups/): "  10 60 3>&1 1>&2 2>&3)
+
+    if [[ $WHIPTAIL == true ]]; then
+        BACKUP_DIR=$(whiptail --inputbox "Enter the backup directory for Filebrowser (default: /mnt/server/backups/): "  10 60 3>&1 1>&2 2>&3)
+    fi
     BACKUP_DIR=${BACKUP_DIR:-/mnt/server/backups/}
 fi
 
