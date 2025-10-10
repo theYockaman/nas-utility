@@ -5,8 +5,69 @@ IFS=$'\n\t'
 
 APP_NAME="nas-utility"
 
+# --- Global argument parser ---
+parse_global_args() {
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --whiptail)
+                WHIPTAIL=true
+                shift
+                ARGS=("$@")
+                break
+                ;;
+            --*)
+                echo "Unknown global option: $1" >&2
+                exit 1
+                ;;
+            *)
+                ARGS=("$@")
+                break
+                ;;
+        esac
+    done
+}
 
 
+# General utility functions
+exit_program() {
+    echo "Exiting program."
+    exit 0
+}
+
+delete_app() {
+    source /usr/local/lib/$APP_NAME/delete_app.sh
+}
+
+log_info() {
+    echo "[INFO] $*"
+}
+
+log_error() {
+    echo "[ERROR] $*" >&2
+}
+
+show_help(){
+    echo "Usage: $0 [global options] <command> [command options]"
+    echo
+    echo "Global Options:"
+    echo "  --whiptail          Use whiptail for interactive prompts"
+    echo
+    echo "Commands:"
+    echo "  -i, install         Install a service (nextcloud, filebrowser, smb, all)"
+    echo "  -u, uninstall       Uninstall a service (nextcloud, filebrowser, smb, all)"
+    echo "  -d, delete          Delete the nas-utility application"
+    echo "  -h, help            Show this help message"
+    echo
+    echo "Examples:"
+    echo "  $0 --whiptail install nextcloud"
+    echo "  $0 install filebrowser /mnt/server/ /mnt/server/backups/"
+    echo "  $0 uninstall smb"
+    echo "  $0 delete"
+}
+
+
+
+# Installation of services
 install_menu() {
     if [ $# -ge 1 ]; then
         cmd=$1
@@ -30,34 +91,10 @@ install_menu() {
                 exit 1
                 ;;
         esac
-
-
-
-    else
-
-        CHOICE=$(whiptail --title "Install Menu" --menu "Choose an option:" 20 60 10 \
-            "Install Nextcloud" "" \
-            "Install FileBrowser" "" \
-            "Install SMB" "" \
-            "Install All" "" \
-            3>&1 1>&2 2>&3)
-
-        exitstatus=$?
-        if [ $exitstatus -ne 0 ] || [ -z "$CHOICE" ]; then
-            echo "No selection made. Exiting."
-            break
-        fi
-
-        case "$CHOICE" in
-            "Install Nextcloud") install_nextcloud ;;
-            "Install FileBrowser") install_filebrowser ;;
-            "Install SMB") install_smb ;;
-            "Install All") install_all ;;
-            *) whiptail --title "Error" --msgbox "Invalid option selected!" 10 50 ;;
-        esac
-
     fi
 }
+
+
 
 install_all() {
     install_nextcloud
@@ -79,7 +116,7 @@ install_smb() {
 
 
 
-
+# Uninstallation of services
 uninstall_menu() {
     if [ $# -ge 1 ]; then
         cmd=$1
@@ -130,6 +167,9 @@ uninstall_menu() {
     fi
 }
 
+
+
+
 uninstall_all() {
     uninstall_nextcloud
     uninstall_filebrowser
@@ -146,29 +186,4 @@ uninstall_filebrowser() {
 
 uninstall_smb() {
     source /usr/local/lib/$APP_NAME/uninstall/smb.sh
-}
-
-
-
-
-exit_program() {
-    echo "Exiting program."
-    exit 0
-}
-
-delete_app() {
-    source /usr/local/lib/$APP_NAME/delete_app.sh
-}
-
-
-
-
-
-
-log_info() {
-    echo "[INFO] $*"
-}
-
-log_error() {
-    echo "[ERROR] $*" >&2
 }
