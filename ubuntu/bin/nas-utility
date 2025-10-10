@@ -16,33 +16,68 @@ main() {
     parse_global_args "$@"
     set -- "${ARGS[@]}"
 
-    # If no arguments provided, show help
-    if [ ${#ARGS[@]} -eq 0 ]; then
-        show_help
-        exit 0
+
+    if [[ $WHIPTAIL == true ]]; then
+
+        # Check if Whiptail is installed
+        if ! command -v whiptail &> /dev/null; then
+            sudo apt update
+            sudo apt install whiptail -y
+        fi
+
+        while true; do
+            CHOICE=$(whiptail --title "Action Menu" --menu "Choose an option:" 20 60 10 \
+                "Install Menu" "" \
+                "Uninstall Menu" "" \
+                "Delete" "" \
+                "Exit" "" \
+                3>&1 1>&2 2>&3)
+
+            exitstatus=$?
+            if [ $exitstatus -ne 0 ] || [ -z "$CHOICE" ]; then
+                echo "No selection made. Exiting."
+                break
+            fi
+
+            case "$CHOICE" in
+                "Install Menu") install_menu ;;
+                "Uninstall Menu") uninstall_menu ;;
+                "Delete") delete_app ;;
+                "Exit") exit_app ;;
+                *) whiptail --title "Error" --msgbox "Invalid option selected!" 10 50 ;;
+            esac
+        done
+    else
+        
+        # If no arguments provided, show help
+        if [ $# -eq 0 ]; then
+            show_help
+            exit 0
+        fi
+
+        # --- Run Actions ---
+        CMD=$1
+        shift
+
+        case $CMD in
+            -i|install)
+                install_menu "$@"
+                ;;
+            -u|uninstall)
+                uninstall_menu "$@"
+                ;;
+            -d|delete)
+                delete_app "$@"
+                ;;
+            -h|help)
+                show_help
+                ;;
+            *)
+                show_help
+                ;;
+        esac
+
     fi
-
-    # --- Run Actions ---
-    CMD=$1
-    shift
-
-    case $CMD in
-        -i|install)
-            install_menu "$@"
-            ;;
-        -u|uninstall)
-            uninstall_menu "$@"
-            ;;
-        -d|delete)
-            delete_app "$@"
-            ;;
-        -h|help)
-            show_help
-            ;;
-        *)
-            show_help
-            ;;
-    esac
 }
 
 # Start the script

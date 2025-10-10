@@ -28,7 +28,7 @@ parse_global_args() {
 
 
 # General utility functions
-exit_program() {
+exit_app() {
     echo "Exiting program."
     exit 0
 }
@@ -70,7 +70,45 @@ show_help(){
 
 # Installation of services
 install_menu() {
-    if [ $# -ge 1 ]; then
+    if [[ $WHIPTAIL == true ]]; then
+
+        # Check if Whiptail is installed
+        if ! command -v whiptail &> /dev/null; then
+            sudo apt update
+            sudo apt install whiptail -y
+        fi
+
+        while true; do
+            CHOICE=$(whiptail --title "Action Menu" --menu "Choose an option:" 20 60 10 \
+                "Install Menu" "" \
+                "Uninstall Menu" "" \
+                "Delete" "" \
+                "Exit" "" \
+                3>&1 1>&2 2>&3)
+
+            exitstatus=$?
+            if [ $exitstatus -ne 0 ] || [ -z "$CHOICE" ]; then
+                echo "No selection made. Exiting."
+                break
+            fi
+
+            case "$CHOICE" in
+                "Install Menu") install_menu ;;
+                "Uninstall Menu") uninstall_menu ;;
+                "Delete") delete_app ;;
+                "Exit") exit_app ;;
+                *) whiptail --title "Error" --msgbox "Invalid option selected!" 10 50 ;;
+            esac
+        done
+    else
+
+        # If no arguments provided, show help
+        if [ $# -eq 0 ]; then
+            show_help
+            exit 0
+        fi
+
+
         cmd=$1
         shift
 
@@ -119,7 +157,45 @@ install_smb() {
 
 # Uninstallation of services
 uninstall_menu() {
-    if [ $# -ge 1 ]; then
+    if [[ $WHIPTAIL == true ]]; then
+
+        # Check if Whiptail is installed
+        if ! command -v whiptail &> /dev/null; then
+            sudo apt update
+            sudo apt install whiptail -y
+        fi
+
+        while true; do
+            CHOICE=$(whiptail --title "Select an Action" --menu "Choose an option:" 20 60 10 \
+                "Uninstall Nextcloud" "" \
+                "Uninstall FileBrowser" "" \
+                "Uninstall SMB" "" \
+                "Uninstall All" "" \
+                3>&1 1>&2 2>&3)
+
+            exitstatus=$?
+            if [ $exitstatus -ne 0 ] || [ -z "$CHOICE" ]; then
+                echo "No selection made. Exiting."
+                break
+            fi
+
+            case "$CHOICE" in
+                "Uninstall Nextcloud") uninstall_nextcloud ;;
+                "Uninstall FileBrowser") uninstall_filebrowser ;;
+                "Uninstall SMB") uninstall_smb ;;
+                "Uninstall All") uninstall_all ;;
+                *) whiptail --title "Error" --msgbox "Invalid option selected!" 10 50 ;;
+            esac
+        done
+    else
+
+        # If no arguments provided, show help
+        if [ $# -eq 0 ]; then
+            show_help
+            exit 0
+        fi
+
+
         cmd=$1
         shift
 
@@ -141,30 +217,7 @@ uninstall_menu() {
                 exit 1
                 ;;
         esac
-
-
-
-    else
-        CHOICE=$(whiptail --title "Select an Action" --menu "Choose an option:" 20 60 10 \
-            "Uninstall Nextcloud" "" \
-            "Uninstall FileBrowser" "" \
-            "Uninstall SMB" "" \
-            "Uninstall All" "" \
-            3>&1 1>&2 2>&3)
-
-        exitstatus=$?
-        if [ $exitstatus -ne 0 ] || [ -z "$CHOICE" ]; then
-            echo "No selection made. Exiting."
-            break
-        fi
-
-        case "$CHOICE" in
-            "Uninstall Nextcloud") uninstall_nextcloud ;;
-            "Uninstall FileBrowser") uninstall_filebrowser ;;
-            "Uninstall SMB") uninstall_smb ;;
-            "Uninstall All") uninstall_all ;;
-            *) whiptail --title "Error" --msgbox "Invalid option selected!" 10 50 ;;
-        esac
+        
     fi
 }
 
