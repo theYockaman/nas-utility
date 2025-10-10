@@ -29,6 +29,7 @@ main() {
             CHOICE=$(whiptail --title "Action Menu" --menu "Choose an option:" 20 60 10 \
                 "Install Menu" "" \
                 "Uninstall Menu" "" \
+                "Reset Ubuntu" "" \
                 "Delete" "" \
                 "Exit" "" \
                 3>&1 1>&2 2>&3)
@@ -42,6 +43,7 @@ main() {
             case "$CHOICE" in
                 "Install Menu") install_menu ;;
                 "Uninstall Menu") uninstall_menu ;;
+                "Reset Ubuntu") reset_ubuntu ;;
                 "Delete") delete_app ;;
                 "Exit") exit_app ;;
                 *) whiptail --title "Error" --msgbox "Invalid option selected!" 10 50 ;;
