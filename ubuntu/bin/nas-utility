@@ -29,6 +29,7 @@ main() {
             CHOICE=$(whiptail --title "Action Menu" --menu "Choose an option:" 20 60 10 \
                 "Install Menu" "" \
                 "Uninstall Menu" "" \
+                "Upload Backup" "" \
                 "Reset Ubuntu" "" \
                 "Delete" "" \
                 "Exit" "" \
@@ -43,6 +44,7 @@ main() {
             case "$CHOICE" in
                 "Install Menu") install_menu ;;
                 "Uninstall Menu") uninstall_menu ;;
+                "Upload Backup") upload_all ;;
                 "Reset Ubuntu") reset_ubuntu ;;
                 "Delete") delete_app ;;
                 "Exit") exit_app ;;

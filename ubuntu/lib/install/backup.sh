@@ -55,13 +55,23 @@ LOG_FILE="/var/log/backup.log"
 
 mkdir -p "$BACKUP_DIR"
 
+MAP_FILE="$BACKUP_DIR/backup_mapping.list"
+> "$MAP_FILE"
+
 echo "=== Backup started at $(date) ===" >> "$LOG_FILE"
 
 while IFS= read -r DIR; do
     # Skip empty lines or comments
     [[ -z "$DIR" || "$DIR" =~ ^# ]] && continue
     echo "Backing up: $DIR" >> "$LOG_FILE"
-    rsync -a --delete "$DIR" "$BACKUP_DIR" >> "$LOG_FILE" 2>&1
+    # Encode the original absolute path into a unique directory name under the backup
+    # Remove leading slash, replace remaining slashes with plus signs
+    ENCODED=$(echo "$DIR" | sed 's|^/||; s|/|+|g')
+    DEST="$BACKUP_DIR/$ENCODED"
+    mkdir -p "$DEST"
+    rsync -a --delete "$DIR" "$DEST" >> "$LOG_FILE" 2>&1
+    # Record mapping: encoded|original
+    echo "$ENCODED|$DIR" >> "$MAP_FILE"
 done < "$CONFIG_FILE"
 
 echo "=== Backup completed at $(date) ===" >> "$LOG_FILE"

@@ -138,12 +138,15 @@ install_menu() {
     fi
 }
 
-
+upload_all(){
+    sudo bash /usr/local/lib/$APP_NAME/upload.sh
+}
 
 install_all() {
     install_nextcloud
     install_filebrowser
     install_smb
+    install_backup_cron
 }
 
 install_backup_cron() {
