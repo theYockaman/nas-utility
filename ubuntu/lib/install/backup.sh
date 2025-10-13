@@ -69,7 +69,8 @@ while IFS= read -r DIR; do
     ENCODED=$(echo "$DIR" | sed 's|^/||; s|/|+|g')
     DEST="$BACKUP_DIR/$ENCODED"
     mkdir -p "$DEST"
-    rsync -a --delete "$DIR" "$DEST" >> "$LOG_FILE" 2>&1
+    # use trailing slash on source to copy contents into $DEST (avoid nested DIR/DIR)
+    rsync -a --delete "$DIR/" "$DEST/" >> "$LOG_FILE" 2>&1
     # Record mapping: encoded|original
     echo "$ENCODED|$DIR" >> "$MAP_FILE"
 done < "$CONFIG_FILE"
