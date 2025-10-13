@@ -87,6 +87,7 @@ install_menu() {
             "Install Nextcloud" "" \
             "Install FileBrowser" "" \
             "Install SMB" "" \
+            "Install Backup CRON" "" \
             "Install All" "" \
             3>&1 1>&2 2>&3)
 
@@ -100,6 +101,7 @@ install_menu() {
             "Install Nextcloud") install_nextcloud ;;
             "Install FileBrowser") install_filebrowser ;;
             "Install SMB") install_smb ;;
+            "Install Backup CRON") install_backup_cron ;;
             "Install All") install_all ;;
             *) whiptail --title "Error" --msgbox "Invalid option selected!" 10 50 ;;
         esac
@@ -142,6 +144,10 @@ install_all() {
     install_nextcloud
     install_filebrowser
     install_smb
+}
+
+install_backup_cron() {
+    source /usr/local/lib/$APP_NAME/install/backup.sh
 }
 
 install_nextcloud() {
