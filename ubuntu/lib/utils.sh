@@ -139,7 +139,7 @@ install_menu() {
 }
 
 upload_all(){
-    sudo bash /usr/local/lib/$APP_NAME/upload.sh
+    sudo bash /usr/local/lib/$APP_NAME/upload.sh --target "/" --all --allow-root --date "$(date +%F)" --services-file /etc/backup_restore_services.list --confirm
 }
 
 install_all() {
