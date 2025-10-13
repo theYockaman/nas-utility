@@ -147,7 +147,7 @@ install_all() {
 }
 
 install_backup_cron() {
-    source /usr/local/lib/$APP_NAME/install/backup.sh
+    sudo bash /usr/local/lib/$APP_NAME/install/backup.sh
 }
 
 install_nextcloud() {
