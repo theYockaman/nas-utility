@@ -15,7 +15,14 @@ EOF
 
 # Defaults
 DATA_DIR=/srv/nextcloud/
-BACKUP_DIR=/srv/backups/
+NAS_CONFIG_FILE="/etc/nas-utility.conf"
+if [ -f "$NAS_CONFIG_FILE" ]; then
+    # shellcheck disable=SC1090
+    source "$NAS_CONFIG_FILE"
+fi
+
+# default backup dir (can be overridden in /etc/nas-utility.conf)
+BACKUP_DIR="${BACKUP_DIR:-/srv/backups/}"
 
 # Parse args
 while [ "$#" -gt 0 ]; do

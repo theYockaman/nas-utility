@@ -5,7 +5,13 @@
 # by the rsync backup setup.
 #============================================================
 
-BACKUP_DIR="/backup"
+NAS_CONFIG_FILE="/etc/nas-utility.conf"
+if [ -f "$NAS_CONFIG_FILE" ]; then
+    # shellcheck disable=SC1090
+    source "$NAS_CONFIG_FILE"
+fi
+
+BACKUP_DIR="${BACKUP_DIR:-/backup}"
 CONFIG_FILE="/etc/backup_dirs.list"
 LOG_FILE="/var/log/backup.log"
 CRON_JOB="/etc/cron.weekly/rsync-backup"

@@ -3,7 +3,15 @@
 # Simple Backup Setup Script (rsync + cron)
 #============================================================
 
-BACKUP_DIR="/backup"
+### Allow overriding backup location from /etc/nas-utility.conf (set BACKUP_DIR there)
+NAS_CONFIG_FILE="/etc/nas-utility.conf"
+if [ -f "$NAS_CONFIG_FILE" ]; then
+    # shellcheck disable=SC1090
+    source "$NAS_CONFIG_FILE"
+fi
+
+# default backup dir (can be overridden by /etc/nas-utility.conf)
+BACKUP_DIR="${BACKUP_DIR:-/backup}"
 CONFIG_FILE="/etc/backup_dirs.list"
 LOG_FILE="/var/log/backup.log"
 CRON_JOB="/etc/cron.weekly/rsync-backup"
@@ -60,20 +68,20 @@ add_if_needed "/etc/systemd/system/filebrowser.service"
 #------------------------------------------------------------
 # Create cron job script
 #------------------------------------------------------------
-cat <<'EOF' > "$CRON_JOB"
+cat <<EOF > "$CRON_JOB"
 #!/bin/bash
 # Backup root (source) - do not attempt to back up the backup storage itself
-BACKUP_ROOT="/backup"
+BACKUP_ROOT="${BACKUP_DIR%/}"
 BACKUP_DIR="$BACKUP_ROOT/$(date +%F)"
 CONFIG_FILE="/etc/backup_dirs.list"
 LOG_FILE="/var/log/backup.log"
 
-mkdir -p "$BACKUP_DIR"
+mkdir -p "${BACKUP_DIR}"
 
 MAP_FILE="$BACKUP_DIR/backup_mapping.list"
 > "$MAP_FILE"
 
-echo "=== Backup started at $(date) ===" >> "$LOG_FILE"
+echo "=== Backup started at \\$(date) ===" >> "$LOG_FILE"
 
 while IFS= read -r DIR; do
     # Skip empty lines or comments
@@ -81,23 +89,23 @@ while IFS= read -r DIR; do
     # normalize
     DIR_NORM="${DIR%/}"
     # Skip backing up the backup storage root itself or anything under it
-    if [[ "$DIR_NORM" == "$BACKUP_ROOT" || "$DIR_NORM" == $BACKUP_ROOT/* ]]; then
-        echo "Skipping backup of backup storage path: $DIR_NORM" >> "$LOG_FILE"
+    if [[ "${DIR_NORM}" == "${BACKUP_ROOT}" || "${DIR_NORM}" == ${BACKUP_ROOT}/* ]]; then
+        echo "Skipping backup of backup storage path: ${DIR_NORM}" >> "$LOG_FILE"
         continue
     fi
-    echo "Backing up: $DIR_NORM" >> "$LOG_FILE"
+    echo "Backing up: ${DIR_NORM}" >> "$LOG_FILE"
     # Encode the original absolute path into a unique directory name under the backup
     # Remove leading slash, replace remaining slashes with plus signs
-    ENCODED=$(echo "$DIR_NORM" | sed 's|^/||; s|/|+|g')
+    ENCODED=$(echo "${DIR_NORM}" | sed 's|^/||; s|/|+|g')
     DEST="$BACKUP_DIR/$ENCODED"
     mkdir -p "$DEST"
     # use trailing slash on source to copy contents into $DEST (avoid nested DIR/DIR)
-    rsync -a --delete "$DIR_NORM/" "$DEST/" >> "$LOG_FILE" 2>&1
+    rsync -a --delete "${DIR_NORM}/" "$DEST/" >> "$LOG_FILE" 2>&1
     # Record mapping: encoded|original
-    echo "$ENCODED|$DIR_NORM" >> "$MAP_FILE"
+    echo "$ENCODED|${DIR_NORM}" >> "$MAP_FILE"
 done < "$CONFIG_FILE"
 
-echo "=== Backup completed at $(date) ===" >> "$LOG_FILE"
+echo "=== Backup completed at \\$(date) ===" >> "$LOG_FILE"
 EOF
 
 chmod +x "$CRON_JOB"

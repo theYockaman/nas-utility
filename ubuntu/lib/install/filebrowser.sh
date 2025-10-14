@@ -15,7 +15,14 @@ EOF
 # Default values
 PORT=8080
 SERVER_DIR=/srv/
-BACKUP_DIR=/backup/
+NAS_CONFIG_FILE="/etc/nas-utility.conf"
+if [ -f "$NAS_CONFIG_FILE" ]; then
+    # shellcheck disable=SC1090
+    source "$NAS_CONFIG_FILE"
+fi
+
+# default backup dir (can be overridden in /etc/nas-utility.conf)
+BACKUP_DIR="${BACKUP_DIR:-/backup/}"
 
 # Parse args (simple, POSIX-friendly)
 while [ "$#" -gt 0 ]; do

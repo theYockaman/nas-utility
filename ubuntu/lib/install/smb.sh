@@ -23,6 +23,13 @@ SHARE_NAME=Shared
 USERS_CSV=""
 PASSWORDS_CSV=""
 
+# Allow overriding backup location from /etc/nas-utility.conf
+NAS_CONFIG_FILE="/etc/nas-utility.conf"
+if [ -f "$NAS_CONFIG_FILE" ]; then
+    # shellcheck disable=SC1090
+    source "$NAS_CONFIG_FILE"
+fi
+
 # Parse args
 while [ "$#" -gt 0 ]; do
     case "$1" in
