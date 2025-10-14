@@ -1,63 +1,62 @@
-
 # Setup Filebrowser: -- https://aimerneige.com/en/post/linux/install-filebrowser-on-ubuntu-server/
 
-if [ $# -ge 1 ]; then
-    if [[ $1 == "--help" ]]; then
-        echo "Usage: $0 filebrowser [options]"
-        echo "Installs FileBrowser with optional parameters:"
-        echo "  arg1   = filebrowser port"
-        echo "  arg2   = server directory"
-        echo "  arg3   = backup directory"
-        return 0
-    fi
+print_usage() {
+    cat <<EOF
+Usage: $0 [--port PORT] [--server-dir DIR] [--backup-dir DIR] [--help]
 
+Installs FileBrowser. Options:
+  --port PORT         Port for FileBrowser (default: 8080)
+  --server-dir DIR    Root directory for FileBrowser (default: /mnt/server/)
+  --backup-dir DIR    Backup directory to restore from (default: /mnt/server/backups/)
+  --help              Show this help
+EOF
+}
 
-    PORT="$1"
-else
+# Default values
+PORT=8080
+SERVER_DIR=/srv/
+BACKUP_DIR=/backup/
 
-    if [[ $WHIPTAIL == true ]]; then
-        PORT=$(whiptail --inputbox "Enter the port for File Browser (default: 8080): "  10 60 3>&1 1>&2 2>&3)
-    fi
-    PORT=${PORT:-8080}
-    
-fi
+# Parse args (simple, POSIX-friendly)
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        --help|-h)
+            print_usage
+            exit 0
+            ;;
+        --port)
+            shift
+            PORT="$1"
+            ;;
+        --server-dir)
+            shift
+            SERVER_DIR="$1"
+            ;;
+        --backup-dir)
+            shift
+            BACKUP_DIR="$1"
+            ;;
+        --whiptail)
+            # keep compatibility but ignore in non-interactive mode
+            WHIPTAIL=true
+            ;;
+        *)
+            echo "Unknown argument: $1"
+            print_usage
+            exit 2
+            ;;
+    esac
+    shift
+done
 
-
-# Get server directory from $1 or prompt
-if [ $# -ge 2 ]; then
-    SERVER_DIR="$2"
-else
-
-    if [[ $WHIPTAIL == true ]]; then
-        SERVER_DIR=$(whiptail --inputbox "Enter the directory to use for Filebrowser root (default: /mnt/server/): "  10 60 3>&1 1>&2 2>&3)
-    fi
-    SERVER_DIR=${SERVER_DIR:-/mnt/server/}
-fi
-
-# Get backup directory from $2 or prompt
-if [ $# -ge 3 ]; then
-    BACKUP_DIR="$3"
-else
-
-    if [[ $WHIPTAIL == true ]]; then
-        BACKUP_DIR=$(whiptail --inputbox "Enter the backup directory for Filebrowser (default: /mnt/server/backups/): "  10 60 3>&1 1>&2 2>&3)
-    fi
-    BACKUP_DIR=${BACKUP_DIR:-/mnt/server/backups/}
-fi
+# Normalize trailing slashes
+SERVER_DIR="${SERVER_DIR%/}/"
+BACKUP_DIR="${BACKUP_DIR%/}/"
 
 # Check if curl is installed
-if ! command -v curl &> /dev/null; then
-    echo "curl is not installed. Installing curl..."
-    sudo apt-get update
-    sudo apt-get install -y curl
-fi
-
-# Check if sqlite3 is installed
-if ! command -v sqlite3 &> /dev/null; then
-    echo "sqlite3 is not installed. Installing sqlite3..."
-    sudo apt-get update
-    sudo apt-get install -y sqlite3
-fi
+# Ensure required tools exist
+command -v curl >/dev/null 2>&1 || { echo "curl not found, installing..."; sudo apt-get update; sudo apt-get install -y curl; }
+command -v sqlite3 >/dev/null 2>&1 || { echo "sqlite3 not found, installing..."; sudo apt-get update; sudo apt-get install -y sqlite3; }
 
 # Create Server Directory if it doesn't exist
 if [ ! -d "$SERVER_DIR" ]; then
@@ -69,8 +68,31 @@ if [ ! -d "$BACKUP_DIR" ]; then
     sudo mkdir -p "$BACKUP_DIR"
 fi
 
+# Register Filebrowser directories for backup
+CONFIG_FILE="/etc/backup_dirs.list"
+if [ ! -f "$CONFIG_FILE" ]; then
+    sudo touch "$CONFIG_FILE"
+    sudo chmod 0644 "$CONFIG_FILE"
+fi
+# Add server root
+if ! sudo grep -Fxq "$SERVER_DIR" "$CONFIG_FILE"; then
+    echo "Adding Filebrowser server root to $CONFIG_FILE"
+    echo "$SERVER_DIR" | sudo tee -a "$CONFIG_FILE" >/dev/null
+fi
+# Add backup dir
+if ! sudo grep -Fxq "$BACKUP_DIR" "$CONFIG_FILE"; then
+    echo "Adding Filebrowser backup dir to $CONFIG_FILE"
+    echo "$BACKUP_DIR" | sudo tee -a "$CONFIG_FILE" >/dev/null
+fi
+# Add config dir if present
+FB_CONFIG_DIR="/etc/filebrowser"
+if [ -d "$FB_CONFIG_DIR" ] && ! sudo grep -Fxq "$FB_CONFIG_DIR" "$CONFIG_FILE"; then
+    echo "Adding Filebrowser config dir to $CONFIG_FILE"
+    echo "$FB_CONFIG_DIR" | sudo tee -a "$CONFIG_FILE" >/dev/null
+fi
+
 # Install Filebrowser
-if ! command -v filebrowser &> /dev/null; then
+if ! command -v filebrowser >/dev/null 2>&1; then
     sudo curl -fsSL https://raw.githubusercontent.com/filebrowser/get/master/get.sh | bash
     if [ $? -ne 0 ]; then
         echo "Failed to install Filebrowser"
@@ -83,29 +105,27 @@ fi
 
 # Check Filebrowser Backup Directory
 if [ -n "$BACKUP_DIR" ] && [ -d "$BACKUP_DIR/Filebrowser_Backup" ]; then
+    FILEBROWSER_BACKUP_DIR=$(find "$BACKUP_DIR/Filebrowser_Backup" -maxdepth 1 -type d -name "filebrowser_backup_*" | sort -r | head -n 1)
 
-    FILEBROWSER_BACKUP_DIR=$(find $1/Filebrowser_Backup -maxdepth 1 -type d -name "filebrowser_backup_*" | sort -r | head -n 1)
-
-    # Copy config, data, and optionally logs
-    sudo rm -rf /etc/filebrowser
-    sudo rm -rf /usr/local/bin/filebrowser
-    
-    sudo cp -a --no-preserve=ownership "$FILEBROWSER_BACKUP_DIR/etc/filebrowser" /etc
-    sudo cp -a --no-preserve=ownership "$FILEBROWSER_BACKUP_DIR/usr/local/bin/filebrowser" /usr/local/bin/
-    
+    if [ -n "$FILEBROWSER_BACKUP_DIR" ]; then
+        # Copy config, data, and optionally logs
+        sudo rm -rf /etc/filebrowser
+        sudo rm -rf /usr/local/bin/filebrowser
+        sudo cp -a --no-preserve=ownership "$FILEBROWSER_BACKUP_DIR/etc/filebrowser" /etc || true
+        sudo cp -a --no-preserve=ownership "$FILEBROWSER_BACKUP_DIR/usr/local/bin/filebrowser" /usr/local/bin/ || true
+    fi
 else
     # Create configuration directory
     sudo mkdir -p /etc/filebrowser/
+fi
 
-# Create configuration file
+# Create configuration file (idempotent)
 cat << EOF | sudo tee /etc/filebrowser/.filebrowser.yaml > /dev/null
-port: $PORT
+port: ${PORT}
 address: 0.0.0.0
-root: $SERVER_DIR
+root: ${SERVER_DIR}
 database: /etc/filebrowser/filebrowser.db
 EOF
-
-fi
 
 #sudo filebrowser users update admin --password admin
 

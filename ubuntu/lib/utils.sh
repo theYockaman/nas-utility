@@ -150,19 +150,32 @@ install_all() {
 }
 
 install_backup_cron() {
-    sudo bash /usr/local/lib/$APP_NAME/install/backup.sh
+    sudo bash /usr/local/lib/$APP_NAME/install/backup.sh "$@"
 }
 
 install_nextcloud() {
-    source /usr/local/lib/$APP_NAME/install/nextcloud.sh
+    # If interactive whiptail helper exists and WHIPTAIL was requested, prefer it
+    if [[ ${WHIPTAIL:-false} == true ]] && [ -f /usr/local/lib/$APP_NAME/install/nextcloud_whiptail.sh ]; then
+        sudo bash /usr/local/lib/$APP_NAME/install/nextcloud_whiptail.sh
+    else
+        sudo bash /usr/local/lib/$APP_NAME/install/nextcloud.sh "$@"
+    fi
 }
 
 install_filebrowser() {
-    source /usr/local/lib/$APP_NAME/install/filebrowser.sh
+    if [[ ${WHIPTAIL:-false} == true ]] && [ -f /usr/local/lib/$APP_NAME/install/filebrowser_whiptail.sh ]; then
+        sudo bash /usr/local/lib/$APP_NAME/install/filebrowser_whiptail.sh
+    else
+        sudo bash /usr/local/lib/$APP_NAME/install/filebrowser.sh "$@"
+    fi
 }
 
 install_smb() {
-    source /usr/local/lib/$APP_NAME/install/smb.sh
+    if [[ ${WHIPTAIL:-false} == true ]] && [ -f /usr/local/lib/$APP_NAME/install/smb_whiptail.sh ]; then
+        sudo bash /usr/local/lib/$APP_NAME/install/smb_whiptail.sh
+    else
+        sudo bash /usr/local/lib/$APP_NAME/install/smb.sh "$@"
+    fi
 }
 
 
@@ -242,13 +255,13 @@ uninstall_all() {
 }
 
 uninstall_nextcloud() {
-    source /usr/local/lib/$APP_NAME/uninstall/nextcloud.sh
+    sudo bash /usr/local/lib/$APP_NAME/uninstall/nextcloud.sh "$@"
 }
 
 uninstall_filebrowser() {
-    source /usr/local/lib/$APP_NAME/uninstall/filebrowser.sh
+    sudo bash /usr/local/lib/$APP_NAME/uninstall/filebrowser.sh "$@"
 }
 
 uninstall_smb() {
-    source /usr/local/lib/$APP_NAME/uninstall/smb.sh
+    sudo bash /usr/local/lib/$APP_NAME/uninstall/smb.sh "$@"
 }

@@ -1,66 +1,79 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
 
-# Get parameters or prompt for shared directory and share name
-if [ $# -ge 1 ]; then
-    if [[ $1 == "--help" ]]; then
-        echo "Usage: $0 smb [options]"
-        echo "Installs SMB with optional parameters:"
-        echo "  arg1   = share directory"
-        echo "  arg2   = share name"
-        echo "  arg3   = users (comma separated)"
-        echo "  arg4   = users passwords (comma separated)"
-        return 0
-    fi
+print_usage() {
+    cat <<EOF
+Usage: $0 [--share-dir DIR] [--share-name NAME] --users user1,user2[,userN] [--passwords p1,p2,...] [--help]
 
-    SHARE_DIR="$1"
-else
-    SHARE_DIR=$(whiptail --inputbox "Enter the directory to share (default: /mnt/server): "  10 60 3>&1 1>&2 2>&3)
-    SHARE_DIR=${SHARE_DIR:-/mnt/server}
+Installs and configures a Samba share. Passwords passed on the command line are visible to other users on the system; prefer using the interactive helper `smb_whiptail.sh` for entering passwords.
+
+Options:
+  --share-dir DIR       Directory to share (default: /srv/samba)
+  --share-name NAME     Share name (default: Shared)
+  --users USERLIST      Comma-separated list of usernames to create/allow (required)
+  --passwords PASSLIST  Comma-separated list of passwords corresponding to users (optional)
+  --help                Show this help
+EOF
+}
+
+# Defaults
+SHARE_DIR=/srv/samba
+SHARE_NAME=Shared
+USERS_CSV=""
+PASSWORDS_CSV=""
+
+# Parse args
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        --help|-h)
+            print_usage
+            exit 0
+            ;;
+        --share-dir)
+            shift; SHARE_DIR="$1" ;;
+        --share-name)
+            shift; SHARE_NAME="$1" ;;
+        --users)
+            shift; USERS_CSV="$1" ;;
+        --passwords)
+            shift; PASSWORDS_CSV="$1" ;;
+        *)
+            echo "Unknown argument: $1"
+            print_usage
+            exit 2
+            ;;
+    esac
+    shift
+done
+
+if [ -z "$USERS_CSV" ]; then
+    echo "Error: --users is required. Use smb_whiptail.sh for interactive input if you prefer not to pass passwords on the command line."
+    exit 2
 fi
 
-if [ $# -ge 2 ]; then
-    SHARE_NAME="$2"
-else
-    SHARE_NAME=$(whiptail --inputbox "Enter the share name (default: Shared): "   10 60 3>&1 1>&2 2>&3)
-    SHARE_NAME=${SHARE_NAME:-Shared}
-fi
+# Normalize
+SHARE_DIR="${SHARE_DIR%/}"
 
-# Get users from $3 or prompt
-if [ $# -ge 3 ]; then
-    USER_INPUT="$3"
-else
-    USER_INPUT=$(whiptail --inputbox "Enter usernames to create and allow (comma separated): "   10 60 3>&1 1>&2 2>&3)
-fi
-IFS=',' read -ra USERS <<< "$USER_INPUT"
-
-# Get passwords from $4 (comma separated) or prompt
-if [ $# -ge 4 ]; then
-    IFS=',' read -ra PASSWORDS <<< "$4"
-    declare -A USER_PASSWORDS
+# Split users and passwords into arrays
+IFS=',' read -ra USERS <<< "$USERS_CSV"
+declare -A USER_PASSWORDS
+if [ -n "$PASSWORDS_CSV" ]; then
+    IFS=',' read -ra PASSWORDS <<< "$PASSWORDS_CSV"
     for i in "${!USERS[@]}"; do
-        USER=$(echo "${USERS[$i]}" | xargs)
-        PASSWORD="${PASSWORDS[$i]}"
-        USER_PASSWORDS["$USER"]="$PASSWORD"
-    done
-else
-    declare -A USER_PASSWORDS
-    for USER in "${USERS[@]}"; do
-        USER=$(echo "$USER" | xargs)
-        PASSWORD=$(whiptail --inputbox "Enter Samba password for $USER: "   10 60 3>&1 1>&2 2>&3)
-        echo
-        USER_PASSWORDS["$USER"]="$PASSWORD"
+        user=$(echo "${USERS[$i]}" | xargs)
+        pass="${PASSWORDS[$i]:-}"
+        USER_PASSWORDS["$user"]="$pass"
     done
 fi
 
-
-
-# Check if Samba is installed, install if not
+# Ensure Samba is installed
 if ! dpkg -s samba >/dev/null 2>&1; then
     sudo apt update
-    sudo apt install samba -y
+    sudo apt install -y samba
 fi
 
-# Create the shared directory only if it does not exist
+# Create the shared directory if it does not exist
 if [ ! -d "$SHARE_DIR" ]; then
     sudo mkdir -p "$SHARE_DIR"
     sudo chown root:root "$SHARE_DIR"
@@ -69,38 +82,63 @@ else
     echo "Directory $SHARE_DIR already exists. Skipping creation."
 fi
 
+# Ensure the backup config exists and include the share directory for backup
+if [ -w /etc ] || [ -w "$(dirname "$CONFIG_FILE" 2>/dev/null)" ]; then
+    : # likely writable by current user (rare)
+fi
+CONFIG_FILE="/etc/backup_dirs.list"
+if [ ! -f "$CONFIG_FILE" ]; then
+    sudo touch "$CONFIG_FILE"
+    sudo chmod 0644 "$CONFIG_FILE"
+fi
+# Add SHARE_DIR to the config if not already present
+if ! sudo grep -Fxq "$SHARE_DIR" "$CONFIG_FILE"; then
+    echo "Adding $SHARE_DIR to $CONFIG_FILE"
+    echo "$SHARE_DIR" | sudo tee -a "$CONFIG_FILE" >/dev/null
+fi
+
 # Create users, set system password to match Samba password, and add Samba password
-for USER in "${USERS[@]}"; do
-    USER=$(echo "$USER" | xargs) # trim whitespace
-    PASS="${USER_PASSWORDS[$USER]}"
+for raw in "${USERS[@]}"; do
+    USER=$(echo "$raw" | xargs)
+    PASS="${USER_PASSWORDS[$USER]:-}"
 
     # Create system user if it doesn't exist
     if ! id "$USER" &>/dev/null; then
         sudo adduser --disabled-password --gecos "" "$USER"
     fi
 
-    # If password is non-empty, set the system password (chpasswd) and Samba password
     if [ -n "$PASS" ]; then
-        # Set system password so user can login (echo "user:pass" | sudo chpasswd)
+        # Set system password (chpasswd reads 'user:password' pairs from stdin)
         echo "$USER:$PASS" | sudo chpasswd
 
-        # Set Samba password (provide password twice to smbpasswd)
-        (echo "$PASS"; echo "$PASS") | sudo smbpasswd -a "$USER" >/dev/null 2>&1
+        # Set Samba password: try to add (-a) first; if that fails because the user exists, update it.
+        # Use a here-string to provide the password twice to smbpasswd -s (silent)
+        if sudo smbpasswd -s -a "$USER" >/dev/null 2>&1 <<< "$PASS\n$PASS"; then
+            : # added successfully
+        else
+            # If adding failed, try to set/change the password for existing samba user
+            if sudo smbpasswd -s "$USER" >/dev/null 2>&1 <<< "$PASS\n$PASS"; then
+                : # updated successfully
+            else
+                echo "Warning: failed to set Samba password for user '$USER'"
+            fi
+        fi
     else
-        # If no password provided, enable samba user with empty password disabled and skip chpasswd
         echo "No password provided for user '$USER' — skipping password set."
     fi
 done
 
-# Backup and configure smb.conf
-sudo cp /etc/samba/smb.conf /etc/samba/smb.conf.bak
+# Backup smb.conf only once (keep the original)
+if [ ! -f /etc/samba/smb.conf.orig ]; then
+    sudo cp /etc/samba/smb.conf /etc/samba/smb.conf.orig || true
+fi
 
 # Add global section for protocol compatibility if not present
 if ! grep -q "server min protocol" /etc/samba/smb.conf; then
-sudo bash -c "cat >> /etc/samba/smb.conf <<EOF
+    sudo bash -c "cat >> /etc/samba/smb.conf <<'EOF'
 
 [global]
-   # Allow SMB1 for XP, but support SMB2/3 for modern macOS
+   # Allow SMB1 for legacy clients while supporting SMB2/3
    server min protocol = NT1
    server max protocol = SMB3
    client min protocol = NT1
@@ -114,12 +152,12 @@ sudo bash -c "cat >> /etc/samba/smb.conf <<EOF
 EOF"
 fi
 
-# Build valid users string
+# Build valid users string (space-separated)
 VALID_USERS=$(printf "%s " "${USERS[@]}" | xargs)
 
 # Only add the share section if it doesn't already exist
 if ! grep -q "^\[$SHARE_NAME\]" /etc/samba/smb.conf; then
-sudo bash -c "cat >> /etc/samba/smb.conf <<EOF
+    sudo bash -c "cat >> /etc/samba/smb.conf <<EOF
 
 [$SHARE_NAME]
    path = $SHARE_DIR
@@ -136,10 +174,13 @@ else
     echo "Share [$SHARE_NAME] already exists in smb.conf. Skipping addition."
 fi
 
-# Restart Samba and allow firewall access
-sudo systemctl restart smb
-sudo ufw allow samba
+# Restart Samba services (try common service names)
+sudo systemctl restart smbd.service || sudo systemctl restart smb.service || true
 
-SERVER_IP=$(hostname -I | awk '{print $1}')
+# Allow Samba through UFW if ufw exists
+if command -v ufw >/dev/null 2>&1; then
+    sudo ufw allow samba || true
+fi
 
+SERVER_IP=$(hostname -I 2>/dev/null | awk '{print $1}')
 echo "Samba share setup complete. Access via: \\\\$SERVER_IP\\$SHARE_NAME"
