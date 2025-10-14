@@ -55,6 +55,7 @@ show_help(){
     echo
     echo "Commands:"
     echo "  -i, install         Install a service (nextcloud, filebrowser, smb, all)"
+    echo "  -r, reset           Reset the Ubuntu host (use --help after to see options)"
     echo "  -u, uninstall       Uninstall a service (nextcloud, filebrowser, smb, all)"
     echo "  -d, delete          Delete the nas-utility application"
     echo "  -h, help            Show this help message"
@@ -67,7 +68,13 @@ show_help(){
 }
 
 reset_ubuntu() {
-    source /usr/local/lib/$APP_NAME/reset.sh
+    # Prefer an interactive whiptail helper when available
+    if [[ ${WHIPTAIL:-false} == true ]] && [ -f /usr/local/lib/$APP_NAME/reset_whiptail.sh ]; then
+        sudo bash /usr/local/lib/$APP_NAME/reset_whiptail.sh
+    else
+        # Run the reset script as a separate process. It is interactive and may require sudo.
+        sudo bash /usr/local/lib/$APP_NAME/reset.sh "$@"
+    fi
     exit_app
 }
 
