@@ -88,6 +88,9 @@ install_menu() {
             "Install FileBrowser" "" \
             "Install SMB" "" \
             "Install Backup CRON" "" \
+            "Install Python" "" \
+            "Install Cron Manager" "" \
+            "Install Cron Manager Refresh" "" \
             "Install All" "" \
             3>&1 1>&2 2>&3)
 
@@ -102,6 +105,9 @@ install_menu() {
             "Install FileBrowser") install_filebrowser ;;
             "Install SMB") install_smb ;;
             "Install Backup CRON") install_backup_cron ;;
+            "Install Python") install_python ;;
+            "Install Cron Manager") install_cron_manager ;;
+            "Install Cron Manager Refresh") install_cron_manager_refresh ;;
             "Install All") install_all ;;
             *) whiptail --title "Error" --msgbox "Invalid option selected!" 10 50 ;;
         esac
@@ -126,6 +132,15 @@ install_menu() {
                 ;;
             "smb")
                 install_smb "$@" &
+                ;;
+            "python")
+                install_python "$@" &
+                ;;
+            "cron-manager")
+                install_cron_manager "$@" &
+                ;;
+            "cron-manager-refresh")
+                install_cron_manager_refresh "$@" &
                 ;;
             "all")
                 install_all &
@@ -178,6 +193,30 @@ install_smb() {
     fi
 }
 
+install_python() {
+    if [[ ${WHIPTAIL:-false} == true ]] && [ -f /usr/local/lib/$APP_NAME/install/python_whiptail.sh ]; then
+        sudo bash /usr/local/lib/$APP_NAME/install/python_whiptail.sh
+    else
+        sudo bash /usr/local/lib/$APP_NAME/install/python.sh "$@"
+    fi
+}
+
+install_cron_manager() {
+    if [[ ${WHIPTAIL:-false} == true ]] && [ -f /usr/local/lib/$APP_NAME/install/cron-manager_whiptail.sh ]; then
+        sudo bash /usr/local/lib/$APP_NAME/install/cron-manager_whiptail.sh
+    else
+        sudo bash /usr/local/lib/$APP_NAME/install/cron-manager.sh "$@"
+    fi
+}
+
+install_cron_manager_refresh() {
+    if [[ ${WHIPTAIL:-false} == true ]] && [ -f /usr/local/lib/$APP_NAME/install/cron-manager-refresh_whiptail.sh ]; then
+        sudo bash /usr/local/lib/$APP_NAME/install/cron-manager-refresh_whiptail.sh
+    else
+        sudo bash /usr/local/lib/$APP_NAME/install/cron-manager-refresh.sh "$@"
+    fi
+}
+
 
 
 # Uninstallation of services
@@ -194,6 +233,9 @@ uninstall_menu() {
             "Uninstall Nextcloud" "" \
             "Uninstall FileBrowser" "" \
             "Uninstall SMB" "" \
+            "Uninstall Python" "" \
+            "Uninstall Cron Manager" "" \
+            "Uninstall Cron Manager Refresh" "" \
             "Uninstall All" "" \
             3>&1 1>&2 2>&3)
 
@@ -207,6 +249,9 @@ uninstall_menu() {
             "Uninstall Nextcloud") uninstall_nextcloud ;;
             "Uninstall FileBrowser") uninstall_filebrowser ;;
             "Uninstall SMB") uninstall_smb ;;
+            "Uninstall Python") uninstall_python ;;
+            "Uninstall Cron Manager") uninstall_cron_manager ;;
+            "Uninstall Cron Manager Refresh") uninstall_cron_manager_refresh ;;
             "Uninstall All") uninstall_all ;;
             *) whiptail --title "Error" --msgbox "Invalid option selected!" 10 50 ;;
         esac
@@ -232,6 +277,15 @@ uninstall_menu() {
                 ;;
             "smb")
                 uninstall_smb &
+                ;;
+            "python")
+                uninstall_python &
+                ;;
+            "cron-manager")
+                uninstall_cron_manager &
+                ;;
+            "cron-manager-refresh")
+                uninstall_cron_manager_refresh &
                 ;;
             "all")
                 uninstall_all &
@@ -264,4 +318,16 @@ uninstall_filebrowser() {
 
 uninstall_smb() {
     sudo bash /usr/local/lib/$APP_NAME/uninstall/smb.sh "$@"
+}
+
+uninstall_python() {
+    sudo bash /usr/local/lib/$APP_NAME/uninstall/python.sh "$@"
+}
+
+uninstall_cron_manager() {
+    sudo bash /usr/local/lib/$APP_NAME/uninstall/cron-manager.sh "$@"
+}
+
+uninstall_cron_manager_refresh() {
+    sudo bash /usr/local/lib/$APP_NAME/uninstall/cron-manager-refresh.sh "$@"
 }

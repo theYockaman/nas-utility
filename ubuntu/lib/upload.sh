@@ -5,8 +5,18 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-SOURCE_ROOT="/backup"
-LOG_FILE="/var/log/backup-upload.log"
+## Allow global configuration via /etc/nas-utility.conf
+# If that file exists it can set BACKUP_DIR and optionally BACKUP_UPLOAD_LOG
+NAS_CONF="/etc/nas-utility.conf"
+if [[ -f "${NAS_CONF}" ]]; then
+    # shellcheck disable=SC1090
+    source "${NAS_CONF}"
+fi
+
+# BACKUP_DIR can be defined in the config; fall back to /backup
+SOURCE_ROOT="${BACKUP_DIR:-/backup}"
+# Allow overriding the upload log location from config as well
+LOG_FILE="${BACKUP_UPLOAD_LOG:-/var/log/backup-upload.log}"
 
 usage() {
     cat <<EOF
